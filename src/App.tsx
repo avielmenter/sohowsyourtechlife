@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { useEffect, useState } from "react";
 import { scaleDown as Menu, Styles } from "react-burger-menu";
+import * as UUID from "uuid";
 
 import { levelFour, levelOne, levelThree, levelTwo } from "./assets/levels";
 import Card from "./components/card/Card";
@@ -8,6 +9,10 @@ import { bigCardStyles } from "./components/card/Card.css";
 import Credits from "./components/credits/Credits";
 import CardHistory from "./components/history/CardHistory";
 import logo from "./assets/techlifegame.png";
+
+import { isError } from '../../shytl-data/error';
+import { Game, createGameFromId } from '../../shytl-data/game';
+import { update, Event } from '../../shytl-data/update';
 
 import {
   appStyles,
@@ -20,7 +25,8 @@ import {
   smallButtonStyles,
   alignCenter
 } from "./styles/app.css";
-
+import { FinalCard } from "../shytl-data/card";
+/*
 function shuffle<T>(array: T[]) {
   let currentIndex = array.length;
   let temporaryValue;
@@ -39,7 +45,7 @@ function shuffle<T>(array: T[]) {
   }
 
   return array;
-}
+}//*/
 
 const styles : any = {
   bmBurgerButton: {
@@ -80,7 +86,7 @@ const styles : any = {
 const finalCardForLevelMessage = "You have finished all the cards in this level!";
 const finalCardForGameMessage = "You've finished all the cards!  The game's done!  Refresh the page or update the player config to start over.";
 
-function App() {
+function App() {/*
   const levels = {
     levelOne: shuffle(levelOne),
     levelTwo: shuffle(levelTwo),
@@ -204,9 +210,69 @@ function App() {
 
   const toggleContentTags = () => {
     setContentTagsOn(!contentTagsOn);
-  };
+  };//*/
 
-  let renderedNames = players.map(player => <div>{player} &nbsp; <button value={player} onClick={handleRemovePlayer} className={clsx(smallButtonStyles)}>Remove</button></div>);
+  const [ loaclGame, setloaclGame ] = useState<Game>(createGameFromId(UUID.v4()));
+  const [newPlayer, setNewPlayer] = useState("");
+
+  function updateloaclGame(event: Event) {
+    const newState = update(loaclGame, event);
+    if (isError(newState))
+      alert(newState)
+    else
+      setloaclGame(newState);
+  }
+
+  function handleAddPlayer() {
+    if (newPlayer.length > 0) 
+      updateloaclGame({ type: "Event", eventType: "AddPlayer", event: { player: { id: UUID.v4(), name: newPlayer } } })
+  }
+
+  function handleRemovePlayer(e: React.ChangeEvent<any>) {
+    const playerID = e.currentTarget.value;
+    console.log(playerID);
+    updateloaclGame({ type: "Event", eventType: "RemovePlayer", event: { playerID } });
+  }
+
+  function setRounds(r: number) { 
+    updateloaclGame({ type: "Event", eventType: "UpdateOptions", event: { options: { ...loaclGame.options, rounds: r } } });
+  }
+
+  function toggleContentTags() {
+    updateloaclGame({ type: "Event", eventType: "UpdateOptions", event: { options: { ...loaclGame.options, contentTagsOn: !loaclGame.options.contentTagsOn } } });
+  }
+
+  function jumpToLevel(level: 1 | 2 | 3 | 4) {
+    updateloaclGame({ type: "Event", eventType: "JumpToLevel", event: { level } } );
+  }
+
+  function handleNextCard(skip: boolean = false) {
+    if (!skip)
+      updateloaclGame({ type: "Event", eventType: "DrawCard" });
+    else
+      updateloaclGame({ type: "Event", eventType: "SkipCard" });
+  }
+
+  const players = loaclGame.players;
+  const rounds = loaclGame.options.rounds;
+
+  const buttons = [1, 2, 3, 4].map((level) => (
+    <button
+      className={clsx(levelButtonStyles, { [selectedLevelStyles]: level === loaclGame.currentLevel })}
+      onClick={() => {jumpToLevel(level as 1|2|3|4);}}
+      key={level}
+    >
+      {"Level " + String(level)}
+    </button>
+  ));
+
+  let renderedNames = players.map(player => <div>{player.name} &nbsp; <button value={player.id} onClick={handleRemovePlayer} className={clsx(smallButtonStyles)}>Remove</button></div>);
+
+  console.log(loaclGame)
+
+  const currCard = loaclGame.currentCard >= loaclGame.cards[loaclGame.currentLevel - 1].length
+    ? FinalCard
+    : loaclGame.cards[loaclGame.currentLevel - 1][loaclGame.currentCard];
 
   return (
     <div id="outer-container" style={{height: '100%'}}>
@@ -247,26 +313,28 @@ function App() {
         <div className={appStyles}>
           <div>{buttons }</div>
           <div className={questionStyles}>
-            <Card key={currCard} styleName={bigCardStyles} question={currCard} contentTagsOn={contentTagsOn}/>
+            <Card key={loaclGame.currentCard} styleName={bigCardStyles} card={currCard} contentTagsOn={loaclGame.options.contentTagsOn}/>
           </div>
-          <CardHistory cardHistory={cardHistory} />
+          <CardHistory cardHistory={loaclGame.cards[loaclGame.currentLevel - 1].slice(0, loaclGame.currentCard)} />
 
           <div className={alignCenter}>
-            {playersThisRound.length >= 2 ? <div>
+            {/*playersThisRound.length >= 2*/loaclGame.currentAsker !== null && loaclGame.currentAnswerer !== null ? <div>
               <button className={nextCardButtonStlyes} onClick={() => handleNextCard()}>
                 next card
               </button>
               <button className={nextCardButtonStlyes} onClick={() => handleNextCard(true)}>
                 skip card
               </button>
-            </div> : ""}
+            </div> : <button className={nextCardButtonStlyes} onClick={() => handleNextCard()}>start game</button>}
             <div>
-              <h3>Level {levelKeyToInt[currLevel]}, Round {currRound}</h3>
-              { (playersThisRound.length < 2 && levelKeyToInt[currLevel] == 1) && 
+              <h3>Level {/*levelKeyToInt[currLevel]*/loaclGame.currentLevel}, Round {/*currRound*/loaclGame.currentRound + 1}</h3>
+              { (/*playersThisRound.length < 2 && levelKeyToInt[currLevel] == 1*/loaclGame.players.length < 2 && loaclGame.currentLevel == 1) && 
                   <div>Please add some players to begin!</div>
               }
-              { (playersThisRound.length >= 2) &&
-                  (<div><h3>Turn: { playersThisRound.length % 2 == 0 ? playersThisRound[0] + " asks " + playersThisRound[1] : playersThisRound[0] + ", " + playersThisRound[1] + " and " + playersThisRound[2] }</h3></div>)
+              { /*(playersThisRound.length >= 2) &&
+                  (<div><h3>Turn: { playersThisRound.length % 2 == 0 ? playersThisRound[0] + " asks " + playersThisRound[1] : playersThisRound[0] + ", " + playersThisRound[1] + " and " + playersThisRound[2] }</h3></div>)*/
+                (loaclGame.currentAsker != null && loaclGame.currentAnswerer != null) &&
+                  (<div><h3>Turn: { loaclGame.players[loaclGame.currentAsker].name + " asks " + loaclGame.players[loaclGame.currentAnswerer].name }</h3></div>)
               }
             </div>
           </div>

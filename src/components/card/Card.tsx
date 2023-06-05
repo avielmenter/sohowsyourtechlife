@@ -2,10 +2,13 @@ import { clsx } from "clsx";
 import { useState } from "react";
 import { cardStyles, red, orange, yellow, green, blue } from "./Card.css";
 
+import { Card as CardData } from '../../../shytl-data/card';
+
 interface CardProps {
   styleName: string;
-  question: string;
+  /*question: string;*/
   contentTagsOn: boolean;
+  card: CardData
 }
 
 const convertToContentTagClass = (tag: string) => {
@@ -56,8 +59,10 @@ const convertToContentTagText = (tag: string) => {
 };
 
 function Card(props: CardProps) {
-  const asterisk = props.question.indexOf('*');
-  const contentTag = asterisk === -1 ? "" : props.question.slice(0, asterisk);
+  /*const asterisk = props.question.indexOf('*');
+  const contentTag = asterisk === -1 ? "" : props.question.slice(0, asterisk);*/
+  const contentTag = props.card.contentTag || "";
+
   const [viewContent, setViewContent] = useState(false);
 
   const toggleViewContent = () => {
@@ -71,7 +76,7 @@ function Card(props: CardProps) {
   }
   else {
       return (<div className={clsx(cardStyles, props.styleName)}>
-      {props.question.slice(asterisk+1)}</div>);
+      {/*props.question.slice(asterisk+1)*/props.card.text}</div>);
   }
 }
 

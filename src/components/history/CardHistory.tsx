@@ -9,8 +9,10 @@ import {
   historyTitleStyles,
 } from "./CardHistory.css";
 
+import { Card as CardData } from '../../../shytl-data/card';
+
 interface CardHistoryProps {
-  cardHistory: string[];
+  cardHistory: CardData[];
 }
 
 const CardHistory: FunctionComponent<CardHistoryProps> = ({ cardHistory }) => {
@@ -19,8 +21,8 @@ const CardHistory: FunctionComponent<CardHistoryProps> = ({ cardHistory }) => {
       <div className={historyTitleStyles}>previous cards</div>
       <div className={cardContainerStyles}>
         <div className={cardContainerScrollStyles}>
-          {cardHistory.map((qn) => (
-            <Card styleName={smallCardStyles} question={qn} key={qn+"history"} contentTagsOn={false}/>
+          {cardHistory.map((c, i) => (
+            <Card styleName={smallCardStyles} card={c} key={String(i)+"history"} contentTagsOn={false}/>
           ))}
         </div>
       </div>
